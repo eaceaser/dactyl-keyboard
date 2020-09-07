@@ -3,7 +3,8 @@
   (:require [scad-clj.scad :refer :all]
             [scad-clj.model :refer :all]
             [dactyl-keyboard.util :refer :all]
-            [dactyl-keyboard.common :refer :all]))
+            [dactyl-keyboard.common :refer :all]
+            [dactyl-keyboard.hand :refer :all]))
 
 (def column-style :standard)
 ; it dictates the location of the thumb cluster.
@@ -1327,6 +1328,7 @@
 (defn model-right [c]
   (let [use-inner-column?          (get c :configuration-use-inner-column?)
         show-caps?                 (get c :configuration-show-caps?)
+        show-hand?                 (get c :configuration-show-hand?)
         use-external-holder?       (get c :configuration-use-external-holder?)
         use-promicro-usb-hole?     (get c :configuration-use-promicro-usb-hole?)
         use-screw-inserts?         (get c :configuration-use-screw-inserts?)
@@ -1342,6 +1344,17 @@
          (if-not use-trrs? (rj9-holder frj9-start c) ()))
         ())
       (if use-inner-column? (inner-key-holes c) ())
+      (if show-hand? (let [position (key-position c 1 1 [0 0 0])
+                           finger-radius (get c :configuration-finger-radius)
+                           hand-angle (get c :configuration-hand-angle)
+                           [x-pos y-pos z-pos] position
+                           x-offset-length (/ (hand-width c) 2)
+                           x-offset (* x-offset-length (Math/cos hand-angle))
+                           y-offset (- (/ (* -1 (hand-length c)) 2) finger-radius)
+                           z-offset 55]
+                       (->> (model-hand c)
+                            (translate [x-pos (* -1 y-pos) z-pos])
+                            (translate [x-offset y-offset z-offset]))))
       (key-holes c)
       (thumb c)
       (connectors c)
@@ -1392,40 +1405,58 @@
 (defn plate-left [c]
   (mirror [-1 0 0] (plate-right c)))
 
-(def c {:configuration-nrows                  5
+(def c {:configuration-nrows                  4
         :configuration-ncols                  6
         :configuration-thumb-count            :six
-        :configuration-last-row-count         :two
-        :configuration-switch-type            :box
+        :configuration-last-row-count         :full
+        :configuration-switch-type            :mx
         :configuration-use-inner-column?      false
 
-        :configuration-alpha                  (/ pi 12)
-        :configuration-pinky-alpha            (/ pi 12)
-        :configuration-beta                   (/ pi 36)
+        :configuration-alpha                  (/ pi 8)
+        :configuration-pinky-alpha            (/ pi 10)
+        :configuration-beta                   (/ pi 32)
         :configuration-centercol              4
-        :configuration-tenting-angle          (/ pi 12)
+        :configuration-tenting-angle          (/ pi 10)
 
         :configuration-use-promicro-usb-hole? false
         :configuration-use-trrs?              false
-        :configuration-use-external-holder?   false
+        :configuration-use-external-holder?   true
 
         :configuration-use-hotswap?           false
         :configuration-stagger?               true
-        :configuration-stagger-index          [0 0 0]
-        :configuration-stagger-middle         [0 2.8 -6.5]
-        :configuration-stagger-ring           [0 0 0]
-        :configuration-stagger-pinky          [0 -13 6]
-        :configuration-use-wide-pinky?        false
-        :configuration-z-offset               6
+        :configuration-stagger-index          [0 0 2]
+        :configuration-stagger-middle         [0 2.8 -5.5]
+        :configuration-stagger-ring           [0 2 0]
+        :configuration-stagger-pinky          [0 -9 7]
+        :configuration-use-wide-pinky?        true
+        :configuration-z-offset               4
         :configuration-use-wire-post?         false
         :configuration-use-screw-inserts?     false
 
         :configuration-hide-last-pinky?       false
         :configuration-show-caps?             false
-        :configuration-plate-projection?      false})
+        :configuration-plate-projection?      false
 
-#_(spit "things/right.scad"
-        (write-scad (model-right c)))
+        :configuration-show-hand?             false
+
+        :configuration-palm-dimensions        [84.78 94.02 29.66]
+        :configuration-hand-angle             (deg2rad 20)
+        :configuration-finger-radius          (/ 18.82 2)
+        :configuration-thumb-lengths          [39.97 30.52]
+        :configuration-finger-lengths         [[28.49 23.66 23.61] ; index
+                                               [31.98 30.82 26.33] ; middle
+                                               [29.08 27.30 25.04] ; ring
+                                               [19.88 23.34 20.31]] ; pinky
+        :configuration-finger-angles          [[0 (deg2rad 40) (deg2rad 53)] ; index
+                                               [0 (deg2rad 53) (deg2rad 69)] ; middle
+                                               [(deg2rad 29) (deg2rad 43) (deg2rad 50)] ; ring
+                                               [(deg2rad 26) (deg2rad 35) (deg2rad 42)]]}) ; pinky
+
+(spit "things/left.scad"
+      (write-scad (model-left c)))
+
+(spit "things/right.scad"
+      (write-scad (model-right c)))
 
 #_(spit "things/right-plate.scad"
         (write-scad (plate-right c)))
@@ -1462,4 +1493,4 @@
         (write-scad
          (difference usb-holder usb-holder-hole)))
 
-#_(defn -main [dum] 1)  ; dummy to make it easier to batc
+(defn -main [dum] 1)  ; dummy to make it easier to batc
