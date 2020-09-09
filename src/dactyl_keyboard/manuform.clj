@@ -315,10 +315,11 @@
 
 (defn thumb-mr-place [c shape]
   (let [thumb-count (get c :configuration-thumb-count)
+        back-thumb-z-offset (get c :configuration-thumb-back-z-offset)
         x-rotation  (if (= thumb-count :five) 10 -6)
         y-rotation  (if (= thumb-count :five) -23 -34)
         z-rotation  (if (= thumb-count :five) 25 48)
-        movement    (if (= thumb-count :five) [-23 -34 -6] [-29 -40 -13]) ]
+        movement    (if (= thumb-count :five) [-23 -34 (+ back-thumb-z-offset -6)] [-29 -40 (+ back-thumb-z-offset -13)]) ]
     (->> shape
          (rotate (deg2rad x-rotation) [1 0 0])
          (rotate (deg2rad y-rotation) [0 1 0])
@@ -338,10 +339,11 @@
 
 (defn thumb-br-place [c shape]
   (let [thumb-count (get c :configuration-thumb-count)
+        back-thumb-z-offset (get c :configuration-thumb-back-z-offset)
         x-rotation  (if (= thumb-count :five) 6 -16)
         y-rotation  (if (= thumb-count :five) -34 -33)
         z-rotation  (if (= thumb-count :five) 35 54)
-        movement    (if (= thumb-count :five) [-39 -43 -16] [-37.8 -55.3 -25.3])]
+        movement    (if (= thumb-count :five) [-39 -43 (+ back-thumb-z-offset -16)] [-37.8 -55.3 (+ back-thumb-z-offset -25.3)])]
     (->> shape
          (rotate (deg2rad x-rotation) [1 0 0])
          (rotate (deg2rad y-rotation) [0 1 0])
@@ -1425,9 +1427,10 @@
         :configuration-use-hotswap?           false
         :configuration-stagger?               true
         :configuration-stagger-index          [0 0 2]
-        :configuration-stagger-middle         [0 2.8 -5.5]
+        :configuration-stagger-middle         [0 2.8 -4.5]
         :configuration-stagger-ring           [0 2 0]
-        :configuration-stagger-pinky          [0 -9 7]
+        :configuration-stagger-pinky          [1.8 -9 8]
+        :configuration-thumb-back-z-offset    1.25
         :configuration-use-wide-pinky?        true
         :configuration-z-offset               4
         :configuration-use-wire-post?         false
