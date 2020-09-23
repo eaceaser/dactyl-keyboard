@@ -1276,6 +1276,28 @@
     6 2.2
     5))
 
+(defn eac-holder-offset [c]
+  (case (get c :configuration-nrows)
+    1 -9
+    2 -7
+    3 -5
+    4 -1.8
+    5 0
+    6 2.2
+    5))
+
+(defn carbonfet-notch-offset [c]
+  (case (get c :configuration-nrows)
+    4 3.15
+    5 0
+    ))
+
+(defn eac-notch-offset [c]
+  (case (get c :configuration-nrows)
+    4 3.15
+    5 0
+    ))
+
 ; Cutout for controller/trrs jack external holder
 (defn external-holder-ref [c]
   (key-position c 0 0 (map - (wall-locate2  0  -1) [0 (/ mount-height 2) 0])))
@@ -1285,6 +1307,35 @@
   (cube 29.166 30 12.6))
 (defn external-holder-space [c]
   (translate (map + (external-holder-position c) [-1.5 (* -1 wall-thickness) 3]) external-holder-cube))
+
+
+(def carbonfet-holder-cube
+  (cube 28.666 30 19.8))
+(def carbonfet-notch-cube
+  (cube 31.366 1.3 19.8))
+(defn carbonfet-holder-position [c]
+  (map + [(+ 21.0 (external-holder-offset c)) 18.7 1.3] [(first (external-holder-ref c)) (second (external-holder-ref c)) 2]))
+(defn carbonfet-holder-space [c]
+  (translate (map + (carbonfet-holder-position c) [-1.5 (* -1 wall-thickness) 6.6]) carbonfet-holder-cube))
+(defn carbonfet-holder-notch [c]
+  (translate (map + (carbonfet-holder-position c) [-1.5 (+ 4.4 (carbonfet-notch-offset c)) 6.6]) carbonfet-notch-cube))
+
+(defn eac-holder-ref [c]
+  (key-position c 0 0 (map - (wall-locate2  0  -1) [0 (/ mount-height 2) 0])))
+(defn eac-holder-position [c]
+  (map + [(+ 18.8 (eac-holder-offset c)) 18.7 1.3] [(first (eac-holder-ref c)) (second (eac-holder-ref c)) 2]))
+(def eac-holder-cube
+  (cube 28.65 30 11.75))
+(def eac-notch-cube
+  (cube 33.7 6.9 11.75))
+(def eac-cutout-cube
+  (cube 2.2 wall-thickness 16.25))
+(defn eac-holder-space [c]
+  (translate (map + (eac-holder-position c) [-0.5 (* -1 wall-thickness) 2.575]) eac-holder-cube))
+(defn eac-holder-notch [c]
+  (translate (map + (eac-holder-position c) [-0.5 (+ 0.25 (* 1 wall-thickness)) 2.575]) eac-notch-cube))
+(defn eac-holder-wall-cutout [c]
+  (translate (map + (eac-holder-position c) [14.96 (+ -0.256 (* 4 wall-thickness)) 2.95]) eac-cutout-cube))
 
 (defn screw-placement [c bottom-radius top-radius height]
   (let [use-wide-pinky?   (get c :configuration-use-wide-pinky?)
@@ -1368,7 +1419,8 @@
                 (union
                  (if use-promicro-usb-hole?
                    (union (pro-micro-holder c)
-                          (trrs-usb-holder-holder c))
+                          (trrs-usb-holder-holder c)
+                          (teensy-holder c))
                    (union (usb-holder fusb-holder-position c)
                           #_(pro-micro-holder c)))
                  (if use-trrs? (trrs-holder c) ()))
@@ -1381,11 +1433,22 @@
             (union (trrs-usb-holder-space c)
                    (trrs-usb-jack c))
             (usb-holder-hole fusb-holder-position c)))
-         (external-holder-space c))))
+         (union
+           (eac-holder-space c)
+           (eac-holder-notch c)
+           (eac-holder-wall-cutout c)
+           ))))
      (translate [0 0 -60] (cube 350 350 120)))))
 
 (defn model-left [c]
   (mirror [-1 0 0] (model-right c)))
+
+(defn holder-test [c]
+  (union
+    ;(mirror [-1 0 0] (eac-holder-wall-cutout c))
+    (intersection
+     (model-left c)
+     (translate [80 50 0] (cube 80 30 40)))))
 
 (defn plate-right [c]
   (let [use-screw-inserts? (get c :configuration-use-screw-inserts?)
@@ -1421,10 +1484,10 @@
         :configuration-tenting-angle          (/ pi 10)
 
         :configuration-use-promicro-usb-hole? false
-        :configuration-use-trrs?              false
+        :configuration-use-trrs?              true
         :configuration-use-external-holder?   true
 
-        :configuration-use-hotswap?           false
+        :configuration-use-hotswap?           true
         :configuration-stagger?               true
         :configuration-stagger-index          [0 0 2]
         :configuration-stagger-middle         [0 2.8 -4.5]
@@ -1434,7 +1497,7 @@
         :configuration-use-wide-pinky?        true
         :configuration-z-offset               4
         :configuration-use-wire-post?         false
-        :configuration-use-screw-inserts?     false
+        :configuration-use-screw-inserts?     true
 
         :configuration-hide-last-pinky?       false
         :configuration-show-caps?             false
@@ -1460,6 +1523,9 @@
 
 (spit "things/right.scad"
       (write-scad (model-right c)))
+
+(spit "things/holder-test.scad"
+      (write-scad (holder-test c)))
 
 #_(spit "things/right-plate.scad"
         (write-scad (plate-right c)))
